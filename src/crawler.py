@@ -15,13 +15,13 @@ import time
 my_encoding = "utf-8"
 
 class Crawler:
-    def __init__(self, u_limit):
+    def __init__(self, u_limit, u_server_lock):
         self._queue = set()
         self._servers = {}
         self._visited = set()
-        self._no_urls_visited = 0
-        self._log_extracted_counter = 0
+        self._log_extracted_counter = 1
         self._limit = u_limit
+        self._server_lock = u_server_lock
         
         self._content_folder = "crawler-content/"
         self._log_visited = codecs.open("crawler-logs/visited.log", "a", encoding=my_encoding)
@@ -30,11 +30,10 @@ class Crawler:
         self._log_extracted.write("id,url,source-url\n")
     
     def run(self):
-        while self._no_urls_visited < self._limit and len(self._queue) > 0:
-            current_url = self._queue.pop()
+        while len(self._visited) < self._limit and len(self._queue) > 0:
+            current_url = self._get_from_queue()
+            print("{},{},".format(len(self._visited), current_url), end="")
             soup = self._openUrl(current_url)
-            self._no_urls_visited += 1
-            print("{},{},".format(self._no_urls_visited, current_url), end="")
             
             urls = self._get_urls_from_soup(soup)
             urls = self._canonize_links(current_url, urls)
@@ -51,19 +50,26 @@ class Crawler:
         
         
     def add_to_queue(self, urls):
-#         for server in [urlparse(url).netloc for url in urls]:
-#             if server not in self._servers:
-#                 self._servers[server] = None;
         self._queue.update(url for url in urls if url not in self._visited)
 
-    def get_statistics(self):
-        return None;
+    def _get_from_queue(self):
+        url = self._queue.pop()
+        server = urlparse(url).netloc
+        if server not in self._servers or time.time() - self._servers[server] > self._server_lock:
+            self._servers[server] = time.time();
+            return url
+        else: 
+            print("Locked: {}, retry".format(url))
+            new_url = self._get_from_queue()
+            self.add_to_queue({url})
+            return new_url
+        
     
     def _log(self, visited_url, extracted_urls):
-        self._log_visited.write("{},{},{}\n".format(self._no_urls_visited, visited_url, len(extracted_urls)))
+        self._log_visited.write("{},{},{}\n".format(len(self._visited), visited_url, len(extracted_urls)))
         for url in extracted_urls:
-            self._log_extracted_counter += 1
             self._log_extracted.write("{},{},{}\n".format(self._log_extracted_counter, url, visited_url))
+            self._log_extracted_counter += 1
       
     def _openUrl(self, url):
         self._visited.add(url)
@@ -88,9 +94,9 @@ class Crawler:
 #             f.write(soup.get_text())
     
 if __name__ == '__main__':
-    start = time.clock()
-    crawler = Crawler(10)
+    start = time.perf_counter()
+    crawler = Crawler(10,10.0)
     crawler.add_to_queue({"http://en.wikipedia.org/wiki/Elon_Musk"})
     crawler.run()
-    end = time.clock()
+    end = time.perf_counter()
     print(end - start) 
