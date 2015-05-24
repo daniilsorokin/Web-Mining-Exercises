@@ -6,10 +6,11 @@ Created on May 20, 2015
 
 from urllib.request import urlopen
 from urllib.parse import urljoin,urldefrag, urlparse
-
-from bs4 import BeautifulSoup
-import codecs
 from urllib.error import HTTPError
+from bs4 import BeautifulSoup
+
+import codecs
+import time
 
 my_encoding = "utf-8"
 
@@ -33,11 +34,13 @@ class Crawler:
             current_url = self._queue.pop()
             soup = self._openUrl(current_url)
             self._no_urls_visited += 1
+            print("{},{},".format(self._no_urls_visited, current_url), end="")
             
             urls = self._get_urls_from_soup(soup)
             urls = self._canonize_links(current_url, urls)
             self.add_to_queue(urls)
             
+            print("{}".format(len(urls)))
             self._log(current_url, urls)
             self._save_content(soup, current_url)
         
@@ -51,13 +54,12 @@ class Crawler:
 #         for server in [urlparse(url).netloc for url in urls]:
 #             if server not in self._servers:
 #                 self._servers[server] = None;
-        self._queue.update({url for url in urls if url not in self._visited})
+        self._queue.update(url for url in urls if url not in self._visited)
 
     def get_statistics(self):
         return None;
     
     def _log(self, visited_url, extracted_urls):
-        print("{},{},{}".format(self._no_urls_visited, visited_url, len(extracted_urls)))
         self._log_visited.write("{},{},{}\n".format(self._no_urls_visited, visited_url, len(extracted_urls)))
         for url in extracted_urls:
             self._log_extracted_counter += 1
@@ -73,7 +75,7 @@ class Crawler:
             return None
 
     def _get_urls_from_soup(self, soup):
-        return [url.get('href') for url in soup.find_all('a') if url.has_attr('href')]
+        return [url.get('href') for url in soup.find_all('a') if url.has_attr('href')] if soup else []
 
     def _canonize_links(self, base, urls):
         return [urljoin(base, urldefrag(url)[0]) for url in urls]
@@ -86,6 +88,9 @@ class Crawler:
 #             f.write(soup.get_text())
     
 if __name__ == '__main__':
+    start = time.clock()
     crawler = Crawler(10)
     crawler.add_to_queue({"http://en.wikipedia.org/wiki/Elon_Musk"})
-    crawler.run() 
+    crawler.run()
+    end = time.clock()
+    print(end - start) 
