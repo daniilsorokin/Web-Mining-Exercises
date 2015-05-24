@@ -13,7 +13,7 @@ import codecs
 import time
 
 my_encoding = "utf-8"
-should_log = False
+should_log = True
 
 class Crawler:
     def __init__(self, u_limit, u_server_lock):
@@ -31,6 +31,7 @@ class Crawler:
         self._log_extracted.write("id,url,source-url\n")
     
     def run(self):
+        self._print_stat()
         while len(self._visited) < self._limit and len(self._queue) > 0:
             current_url = self._get_from_queue()
             if should_log: print("{},{},".format(len(self._visited), current_url), end="")
@@ -43,28 +44,45 @@ class Crawler:
             if should_log: print("{}".format(len(urls)))
             self._log(current_url, urls)
             self._save_content(soup, current_url)
+            if len(self._visited) % 10 == 0: self._print_stat()
         
-        # Delete later 
-        with codecs.open("crawler-logs/queue.log", "w", encoding=my_encoding) as f:
-            for url in self._queue:
-                f.write("{}\n".format(url))
+#         # Delete later 
+#         with codecs.open("crawler-logs/queue.log", "w", encoding=my_encoding) as f:
+#             for url in self._queue:
+#                 f.write("{}\n".format(url))
         
         
     def add_to_queue(self, urls):
         self._queue.update(url for url in urls if url not in self._visited)
 
-    def _get_from_queue(self):
+    def _get_from_queue(self, with_lock=True):
+#         url = self._queue.pop()
+#         server = urlparse(url).netloc
+#         if not with_lock or server not in self._servers or time.time() - self._servers[server] > self._server_lock:
+#             self._servers[server] = time.time();
+#             return url
+#         else: 
+#             if should_log: print("Locked: {}, try another".format(server))
+#             if len(self._queue) > 100: new_url = self._get_from_queue()
+#             else: new_url = self._get_from_queue(with_lock=False)
+#             self._queue.add(url)
+#             return new_url
+
         url = self._queue.pop()
         server = urlparse(url).netloc
-        if server not in self._servers or time.time() - self._servers[server] > self._server_lock:
-            self._servers[server] = time.time();
-            return url
-        else: 
+        collected = []
+        while len(collected) < 100 and server in self._servers and time.time() - self._servers[server] < self._server_lock:
             if should_log: print("Locked: {}, try another".format(server))
-            new_url = self._get_from_queue()
-            self.add_to_queue({url})
-            return new_url
+            collected.append(url)
+            url = self._queue.pop()
+            server = urlparse(url).netloc
+        self._servers[server] = time.time();
+        self._queue.update(collected)
+        return url
         
+        
+    def _print_stat(self):
+        print("No_visited: {}, Queue_size: {}".format(len(self._visited), len(self._queue)))    
     
     def _log(self, visited_url, extracted_urls):
         self._log_visited.write("{},{},{}\n".format(len(self._visited), visited_url, len(extracted_urls)))
@@ -100,4 +118,4 @@ if __name__ == '__main__':
     crawler.add_to_queue({"http://en.wikipedia.org/wiki/Elon_Musk"})
     crawler.run()
     end = time.perf_counter()
-    print(end - start) 
+    print("Elapsed time: " + str(end - start)) 
