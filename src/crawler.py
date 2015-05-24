@@ -13,6 +13,7 @@ import codecs
 import time
 
 my_encoding = "utf-8"
+should_log = False
 
 class Crawler:
     def __init__(self, u_limit, u_server_lock):
@@ -32,14 +33,14 @@ class Crawler:
     def run(self):
         while len(self._visited) < self._limit and len(self._queue) > 0:
             current_url = self._get_from_queue()
-            print("{},{},".format(len(self._visited), current_url), end="")
+            if should_log: print("{},{},".format(len(self._visited), current_url), end="")
             soup = self._openUrl(current_url)
             
             urls = self._get_urls_from_soup(soup)
-            urls = self._canonize_links(current_url, urls)
+            urls = self._canonize_and_filter_links(current_url, urls)
             self.add_to_queue(urls)
             
-            print("{}".format(len(urls)))
+            if should_log: print("{}".format(len(urls)))
             self._log(current_url, urls)
             self._save_content(soup, current_url)
         
@@ -59,7 +60,7 @@ class Crawler:
             self._servers[server] = time.time();
             return url
         else: 
-            print("Locked: {}, retry".format(url))
+            if should_log: print("Locked: {}, try another".format(server))
             new_url = self._get_from_queue()
             self.add_to_queue({url})
             return new_url
@@ -83,8 +84,8 @@ class Crawler:
     def _get_urls_from_soup(self, soup):
         return [url.get('href') for url in soup.find_all('a') if url.has_attr('href')] if soup else []
 
-    def _canonize_links(self, base, urls):
-        return [urljoin(base, urldefrag(url)[0]) for url in urls]
+    def _canonize_and_filter_links(self, base, urls):
+        return [urljoin(base, urldefrag(url)[0]) for url in urls if not url.startswith("javascript:")]
     
     def _save_content(self, soup, url):
         str_url = "_".join(urlparse(url)).replace("/","_")
