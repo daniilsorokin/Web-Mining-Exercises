@@ -17,11 +17,12 @@ from check_duplicates import get_content
 my_encoding = 'utf-8'
 pattern_unigrams = "[^\W\d_]"
 pattern_bigrams = "[^\W\d_]{2}"
+min_freq = 0.0001
 
 def cosineOnDicts(a, b, base):
-    amagn = 0.0
-    bmagn = 0.0
-    abproduct = 0.0
+    amagn = min_freq
+    bmagn = min_freq
+    abproduct = min_freq
     for el in base:
         v_a = a[el] if el in a else 0.0
         v_b = b[el] if el in b else 0.0
@@ -84,16 +85,13 @@ if __name__ == '__main__':
     parser.add_argument('files', nargs='+', type=argparse.FileType('r', encoding=my_encoding),  
                         help = "Text documents to process. Should be in " + my_encoding)
     params = parser.parse_args()
-    
     identifier = LangIdentifier("langs/")
-    
+
     for f in params.files:
         txt = f.read().lower()
         if params.w:
             txt = get_content(txt)
-        f.close()
 
         predicted_lang = identifier.identify_language(txt)
-        
         filename = f.name.rsplit(os.sep, 2)[1] if os.sep in f.name else f.name
         print("{} | {} | ".format(filename, predicted_lang))

@@ -13,7 +13,7 @@ import nltk
 from nltk.probability import FreqDist
 from nltk.tokenize import regexp_tokenize
 from nltk.corpus import stopwords
-from email.policy import default
+
 
 my_encoding = 'utf-8'
 
