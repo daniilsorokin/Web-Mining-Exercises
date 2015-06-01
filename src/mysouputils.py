@@ -15,7 +15,7 @@ def get_content_from_soup(soup):
         ""   
 
 def get_urls_from_soup(soup):
-    return [url.get('href') for url in soup.find_all('a') if url.has_attr('href')] if soup else []
+    return [url.get('href').strip() for url in soup.find_all('a') if url.has_attr('href')] if soup else []
 
 def canonize_and_filter_urls(base, urls, constraints = {"javascript","mailto"}):
     return [urljoin(base, urldefrag(url)[0]) for url in urls  

@@ -49,7 +49,7 @@ class Crawler:
     rub() and add_to_queue(). The latter should be used to add the starting link
     before calling run(). '''
     
-    def __init__(self, u_limit, u_server_lock, u_language=None):
+    def __init__(self, u_limit, u_server_lock, u_language=None, url_prefix_filter=None):
         self._queue = set()
         self._servers = {}
         self._visited = set()
@@ -66,6 +66,7 @@ class Crawler:
             self._lang_focus = None
             self._langid = None
             self._queue = PriorityQueue()
+        self._url_prefix_filter = url_prefix_filter
         
         self._content_folder = save_content_to
         self._log_visited = codecs.open(save_logs_to + "visited_links.log", "a", encoding=my_encoding)
@@ -84,7 +85,8 @@ class Crawler:
             if soup:
                 urls = mysouputils.get_urls_from_soup(soup)
                 urls = mysouputils.canonize_and_filter_urls(current_url, urls)
-                print("extracted:" + str(urls))
+                if self._url_prefix_filter: 
+                    urls = [url for url in urls if url.startswith(self._url_prefix_filter)]
                 if self._lang_focus:
                     l_score = self._langid.get_score(mysouputils.get_content_from_soup(soup), "de")                    
                     self.add_to_queue(urls,l_score) 
@@ -117,7 +119,7 @@ class Crawler:
         return url[0]
         
     def _openUrl(self, url):
-        self._visited.add(time.time())
+        self._visited.add(url)
         try:
             with urlopen(url, timeout=5) as d:
                 soup = BeautifulSoup(d.read())
@@ -152,7 +154,7 @@ class Crawler:
     
 if __name__ == '__main__':
     start = time.perf_counter()
-    crawler = Crawler(3, 30.0,"de")
+    crawler = Crawler(3000, 0.1, url_prefix_filter="http://www.faz.net/aktuell/politik/ausland/")
     crawler.add_to_queue({"http://www.faz.net/"}, 1.0)
     crawler.run()
     end = time.perf_counter()
