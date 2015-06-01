@@ -57,29 +57,29 @@ if __name__ == '__main__':
         bigrams = regexp_tokenize(txt, pattern_bigrams) 
         
         #Create frequency distributions    
-#         fdist_words = FreqDist(txt_tokens)
+        fdist_words = FreqDist(txt_tokens)
         fdist_ngrams = FreqDist(unigrams + bigrams)
         
         # Store most common words and ngrams for latter comparison of texts
-#         words_most_common.append([k for (k,_) in fdist_words.most_common(params.n)])
+        words_most_common.append([k for (k,_) in fdist_words.most_common(params.n)])
         ngrams_most_common.append([k for (k,_) in fdist_ngrams.most_common(params.m)])
         outputname = "output_for_" + f.name.rsplit(os.sep, 2)[1]
         
         # Write out the distribution of words in the document
-#         with codecs.open("output/words_" + outputname, "w", encoding=my_encoding) as out:
-#             for k,v in fdist_words.most_common():
-#                 prozent = fdist_words.freq(k)
-#                 out.write("{},{},{}\n".format(k,v, prozent))
+        with codecs.open("distributions-data/output/words_" + outputname, "w", encoding=my_encoding) as out:
+            for k,v in fdist_words.most_common():
+                prozent = fdist_words.freq(k)
+                out.write("{},{},{}\n".format(k,v, prozent))
         # Write out the distribution of ngrams in the document
-        with codecs.open("output/letters_" + outputname, "w", encoding=my_encoding) as out:
+        with codecs.open("distributions-data/output/letters_" + outputname, "w", encoding=my_encoding) as out:
             for k,v in fdist_ngrams.most_common():
                 prozent = v / (len(unigrams) if len(k) == 1 else len(bigrams))
                 out.write("{},{},{}\n".format(k,v, prozent))  
         # Write the size of bins of words that appear with the same frequency               
-#         with codecs.open("bins/" + outputname, "w", encoding=my_encoding) as out:
-#             for i in sorted(set(fdist_words.values())):
-#                 bin_size = fdist_words.Nr(i)
-#                 out.write("{},{}\n".format(i,bin_size))     
+        with codecs.open("distributions-data/bins/" + outputname, "w", encoding=my_encoding) as out:
+            for i in sorted(set(fdist_words.values())):
+                bin_size = fdist_words.Nr(i)
+                out.write("{},{}\n".format(i,bin_size))     
     print('Output distributions saved in \'output\' folder.')
     print('Output bins saved in \'bins\' folder.')
     # If there are many documents -> compare their most common words and ngrams

@@ -8,6 +8,7 @@ from nltk.tokenize import regexp_tokenize
 from os import listdir
 from bs4 import BeautifulSoup
 import codecs, sys, time
+from mysouputils import get_content_from_soup
 
 pattern_words = "[\w\-0-9']+"
 my_encoding = "utf-8"
@@ -35,13 +36,7 @@ def generate_ngrams(tokens, n):
             for j in range(n):
                 ngram += tokens[i+j] + " "
             ngrams.append(ngram)
-    return ngrams
-
-def get_content(html):
-    soup = BeautifulSoup(html)
-    for tag in soup(["script", "style"]):
-        tag.extract()
-    return soup.get_text()    
+    return ngrams 
     
 if __name__ == '__main__':
     if len(sys.argv) > 1:
@@ -51,7 +46,7 @@ if __name__ == '__main__':
         files = []
         for filename in file_names:
             with codecs.open(mdir + filename, "r", encoding=my_encoding) as f: 
-                files.append( (filename, get_content(f.read())) )
+                files.append( (filename, get_content_from_soup(BeautifulSoup(f.read()))) )
 
         print( "No of files:" + str(len(files)) )
         while len(files):

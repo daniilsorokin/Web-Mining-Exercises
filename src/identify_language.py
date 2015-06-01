@@ -12,7 +12,7 @@ from nltk.probability import FreqDist
 from nltk.tokenize import regexp_tokenize
 from itertools import islice
 
-from check_duplicates import get_content
+from check_duplicates import get_content_from_soup
 
 my_encoding = 'utf-8'
 pattern_unigrams = "[^\W\d_]"
@@ -85,12 +85,12 @@ if __name__ == '__main__':
     parser.add_argument('files', nargs='+', type=argparse.FileType('r', encoding=my_encoding),  
                         help = "Text documents to process. Should be in " + my_encoding)
     params = parser.parse_args()
-    identifier = LangIdentifier("langs/")
+    identifier = LangIdentifier("lang_id_data/langs/")
 
     for f in params.files:
         txt = f.read().lower()
         if params.w:
-            txt = get_content(txt)
+            txt = get_content_from_soup(txt)
 
         predicted_lang = identifier.identify_language(txt)
         filename = f.name.rsplit(os.sep, 2)[1] if os.sep in f.name else f.name
