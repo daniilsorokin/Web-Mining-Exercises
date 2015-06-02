@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 import mysouputils
 from identify_language import LangIdentifier
 
-import codecs,time,re
+import codecs,time,re,argparse,os
 
 # Parameters
 my_encoding = "utf-8"
@@ -68,6 +68,12 @@ class Crawler:
             self._queue = PriorityQueue()
         self._url_prefix_filter = url_prefix_filter
         
+        if not os.path.exists(data_folder): os.makedirs(data_folder)
+        if not os.path.exists(save_content_to): os.makedirs(save_content_to)
+        if not os.path.exists(save_content_to + "html/"): os.makedirs(save_content_to + "html/")
+        if not os.path.exists(save_content_to + "text/"): os.makedirs(save_content_to + "text/")
+        if not os.path.exists(save_logs_to): os.makedirs(save_logs_to)
+
         self._content_folder = save_content_to
         self._log_visited = codecs.open(save_logs_to + "visited_links.log", "a", encoding=my_encoding)
         self._log_visited.write("id,url,urls-extracted\n")
@@ -154,8 +160,20 @@ class Crawler:
     
 if __name__ == '__main__':
     start = time.perf_counter()
-    crawler = Crawler(3000, 0.1, url_prefix_filter="http://www.faz.net/aktuell/politik/ausland/")
-    crawler.add_to_queue({"http://www.faz.net/"}, 1.0)
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n',type=int, help = "Number of pages to download.", default=3000)
+    parser.add_argument('-s',type=float, help = "Access interval to the same server (in sec.).", default=0.1)
+    parser.add_argument('-l',type=str, help = "Language to focus on. Web pages in this language will be preferred.",
+                        default=None)
+    parser.add_argument('-p',type=str, help = "Prefix to filter out urls in the queue. Only urls that start with the given prefix will be considered.",
+                        default=None)
+    parser.add_argument('start', type=str, help = "Start url.")
+    
+    params = parser.parse_args()
+    
+    crawler = Crawler(params.n, params.s, u_language=params.l, url_prefix_filter=params.p)
+    crawler.add_to_queue(params.start, 1.0)
     crawler.run()
     end = time.perf_counter()
     print("Elapsed time: " + str(end - start)) 
