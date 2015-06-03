@@ -4,21 +4,22 @@ Created on Jun 1, 2015
 @author: Daniil Sorokin<sorokin@ukp.informatik.tu-darmstadt.de>
 '''
 
-import os, codecs, re, argparse
+import os, codecs, re, argparse, random, math
 from nltk.probability import FreqDist
 from collections import defaultdict
 
 my_encoding = "utf-8"
 
 class DocumentCorpus:
-    def __init__(self):
-        self._documents = []
+    def __init__(self, documents=None):
+        self._documents = documents if documents else []
         
     def load_from_folder(self, folder_name):
         for f_name in os.listdir(folder_name):
             with codecs.open(folder_name + f_name, "r", encoding=my_encoding) as f:
                 self._documents.append( (f.read().strip(), f_name) )
         print("Loaded {} documents.".format(len(self._documents)))
+        return self._documents
     
     def save_to_folder(self, folder_name):
         if not os.path.exists(folder_name): os.makedirs(folder_name)
@@ -26,6 +27,15 @@ class DocumentCorpus:
             with codecs.open(folder_name + document[1], "w", encoding=my_encoding) as out:
                 out.write(document[0])
         print("Saved to " + folder_name)
+        
+    def split_train_test(self):
+        random.shuffle(self._documents)
+        _middle_id = math.ceil(len(self._documents) / 2) 
+        return DocumentCorpus(self._documents[:_middle_id]), DocumentCorpus(self._documents[_middle_id:])
+    
+    def get_classes_dist(self):
+        _classes = [get_document_class(doc[1]) for doc in self._documents]
+        return FreqDist(_classes)
     
     def print_stat(self):
         lens = [len(doc[0]) for doc in self._documents]
@@ -34,6 +44,7 @@ class DocumentCorpus:
         min_len = min(lens)
         print("{} documents.".format(len(self._documents)))
         print("Avg. length: {} \n Max length: {} \n Min length: {}".format(avg_doc_len,max_len,min_len))
+        print("Classes: " + str(self.get_classes_dist().most_common()))
     
     def remove_empty_lines(self):
         self._documents = [ (self._remove_empty_lines_in_doc(doc[0]),doc[1]) for doc in self._documents]
@@ -67,6 +78,13 @@ class DocumentCorpus:
     
     def _remove_numbers_and_links_from_document(self, document):
         return "\n".join([line.strip() for line in document.split("\n") if not re.match('[\d\.\-\s]+$|https?://[^\s<>"]+$|www\.[^\s<>"]+$', line.strip()) ])
+    
+def get_document_class(document_name):
+    return document_name.split("_",2)[0]
+
+def get_classes(documents):
+    return {get_document_class(doc[1]) for doc in documents}
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -85,23 +103,6 @@ if __name__ == '__main__':
     corpus.print_stat()
     distribution = corpus.get_overlaps()
     
-#     # Development code
-#     sorted_dist = distribution.most_common()
-# 
-#     no_more_1000 = [el for el in sorted_dist if el[1] > 1000]
-#     avg_len_no_1000 = sum([len(el[0]) for el in no_more_1000]) / len(no_more_1000)
-#     no_more_1 = [el for el in sorted_dist if el[1] > 1]
-#     avg_len_no_1 = sum([len(el[0]) for el in no_more_1]) / len(no_more_1)
-#     no_eq_1 = [el for el in sorted_dist if el[1] == 1]
-#     avg_len_no_eq_1 = sum([len(el[0]) for el in no_eq_1]) / len(no_eq_1)
-#     
-#     print("Unique lines: {}".format( len(distribution) )) 
-#     print("Line duplicates:")
-#     print("{} - frequency > 1000, avg. length = {}".format(len(no_more_1000), avg_len_no_1000))
-#     print("{} - frequency > 1, avg. length = {}".format(len(no_more_1), avg_len_no_1))
-#     print("{} - frequency = 1, avg. length = {}".format(len(no_eq_1), avg_len_no_eq_1))    
-
-
     corpus.remove_overlaps(1,distribution)
     corpus.remove_empty_lines()
     corpus.remove_numbers_and_links()
