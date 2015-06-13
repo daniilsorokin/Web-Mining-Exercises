@@ -4,42 +4,9 @@ Created on Jun 3, 2015
 @author: Daniil Sorokin<sorokin@ukp.informatik.tu-darmstadt.de>
 '''
 import argparse, codecs
+from evaluation_metrics import *
 my_encoding = 'utf-8'
 
-def compute_tp(clss, predictions, gold, t=0.5):
-    tp = 0
-    for i,g in enumerate(gold):
-        prediction = 0 if predictions[i] >= t else 1
-        if g == clss and prediction == clss: tp += 1
-    return  tp
-
-def compute_fp(clss, predictions, gold, t=0.5):
-    fp = 0
-    for i,g in enumerate(gold):
-        prediction = 0 if predictions[i] >= t else 1
-        if prediction == clss and not g == clss: fp += 1
-    return  fp
-     
-def compute_fn(clss, predictions, gold, t=0.5):
-    fn = 0
-    for i,g in enumerate(gold):
-        prediction = 0 if predictions[i] >= t else 1
-        if g == clss and not prediction == clss: fn += 1
-    return  fn     
-
-def compute_tn(clss, predictions, gold, t=0.5):
-    tn = 0
-    for i,g in enumerate(gold):
-        prediction = 0 if predictions[i] >= t else 1
-        if not g == clss and not prediction == clss: tn += 1
-    return  tn
-
-     
-def compute_precision(clss, predictions, gold, t=0.5):
-    return compute_tp(clss, predictions, gold, t) / (compute_tp(clss, predictions, gold, t) + compute_fp(clss, predictions, gold, t) + 0.0001)
-
-def compute_recall(clss, predictions, gold,  t=0.5):
-    return compute_tp(clss, predictions, gold, t) / (compute_tp(clss, predictions, gold, t) + compute_fn(clss, predictions, gold, t) + 0.0001)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
