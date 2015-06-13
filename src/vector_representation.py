@@ -10,7 +10,6 @@ from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from collections import defaultdict
 from compose_corpus import DocumentCorpus, get_document_class, get_classes
-from pyparsing import LineStart
 
 
 pattern_words = "\w[\w\-0-9']+"
@@ -25,7 +24,7 @@ class StemmedCorpus(DocumentCorpus):
         self._stemmed_documents = []
     
     def preprocess_documents(self):
-        self._stemmed_documents = [ (self._stemm_tokens(self._remove_stopword(self._tokenize_document(doc[0]))), doc[1] ) for doc in self._documents]
+        self._stemmed_documents = [ (self._stemm_tokens(self._remove_stopword(self._tokenize_document(doc[0].lower()))), doc[1] ) for doc in self._documents]
     
     def compute_base_terms(self):
         base_terms = defaultdict(int)
@@ -86,7 +85,7 @@ if __name__ == '__main__':
     params = parser.parse_args()
     if not os.path.exists(params.output_folder): os.makedirs(params.output_folder)
     
-    corpus = StemmedCorpus()
+    corpus = StemmedCorpus(language="english")
     corpus.load_from_folder(params.input_folder)
     corpus.preprocess_documents()
     
@@ -101,11 +100,11 @@ if __name__ == '__main__':
         base_terms = filter_base_terms(base_terms, params.n)
         print("Base terms filtered: " + str(len(base_terms)))
         if params.s:
-            with codecs.open("selected_base_terms.txt", "w", encoding=my_encoding) as out:
+            with codecs.open("selected_base_terms_n" + str(len(base_terms)) + ".txt", "w", encoding=my_encoding) as out:
                 out.write("bf,idf\n")
                 for bt, idf in base_terms: 
                     out.write("{},{}\n".format(bt, idf))
-            print("Base term list saved to selected_base_terms.txt")
+            print("Base term list saved to selected_base_terms_n" + str(len(base_terms)) + ".txt")
 #     print(base_terms)
     vectors = corpus.compute_vectors(base_terms)
-    save_as_libsvm(vectors, params.output_folder + "vectors_n" + str(len(base_terms)) + ".data")
+    save_as_csv(vectors, params.output_folder + "vectors_n" + str(len(base_terms)) + ".csv")

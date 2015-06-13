@@ -14,12 +14,17 @@ class DocumentCorpus:
     def __init__(self, documents=None):
         self._documents = documents if documents else []
         
-    def load_from_folder(self, folder_name):
+    def load_from_folder(self, folder_name, class_name = ""):
+        """ Adds documents from the specified folder into the corpus. """
         for f_name in os.listdir(folder_name):
             with codecs.open(folder_name + f_name, "r", encoding=my_encoding) as f:
-                self._documents.append( (f.read().strip(), f_name) )
+                self._documents.append( (f.read().strip(), create_document_name(f_name, class_name)) )
         print("Loaded {} documents.".format(len(self._documents)))
         return self._documents
+    
+    def load_from_folders(self, folder_name):
+        for f_folder_name in os.listdir(folder_name):
+            self.load_from_folder(folder_name + f_folder_name + os.sep, f_folder_name)
     
     def save_to_folder(self, folder_name):
         if not os.path.exists(folder_name): os.makedirs(folder_name)
@@ -28,9 +33,9 @@ class DocumentCorpus:
                 out.write(document[0])
         print("Saved to " + folder_name)
         
-    def split_train_test(self):
+    def split_train_test(self, test_ratio = 0.5):
         random.shuffle(self._documents)
-        _middle_id = math.ceil(len(self._documents) / 2) 
+        _middle_id = math.ceil(len(self._documents) * test_ratio) 
         return DocumentCorpus(self._documents[:_middle_id]), DocumentCorpus(self._documents[_middle_id:])
     
     def get_classes_dist(self):
@@ -39,7 +44,7 @@ class DocumentCorpus:
     
     def print_stat(self):
         lens = [len(doc[0]) for doc in self._documents]
-        avg_doc_len = sum(lens) / len(self._documents)
+        avg_doc_len = sum(lens) / len(self._documents) if len(self._documents) > 0 else 0
         max_len = max(lens)
         min_len = min(lens)
         print("{} documents.".format(len(self._documents)))
@@ -79,6 +84,9 @@ class DocumentCorpus:
     def _remove_numbers_and_links_from_document(self, document):
         return "\n".join([line.strip() for line in document.split("\n") if not re.match('[\d\.\-\s]+$|https?://[^\s<>"]+$|www\.[^\s<>"]+$', line.strip()) ])
     
+def create_document_name(document_name, class_name):
+    return (class_name.strip() + "_"  if len(class_name) > 0 else "") + document_name.strip();
+
 def get_document_class(document_name):
     return document_name.split("_",2)[0]
 
@@ -88,24 +96,30 @@ def get_classes(documents):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('-p',action='store_true', help = "Clean up documents.")
+    parser.add_argument('-f',action='store_true', help = "Classes are separated into folders.")
     parser.add_argument('-l',action='store_true', help = "Save statistics to file.")
-    parser.add_argument('-s',type=int, help = "Remove files shorter than the number. The length is calculate after preprocessing.", default=1)
+    parser.add_argument('-s',type=int, help = "Remove files shorter than the give length in characters. The length is calculate after preprocessing.", default=0)
     parser.add_argument('input_folder', type=str, help = "Corpus input.")
     parser.add_argument('output_folder', type=str, help = "Save to.")
     
     params = parser.parse_args()
     
-    
     save_statistics = params.l
+    clean_up_document = params.p
     
     corpus = DocumentCorpus()
-    corpus.load_from_folder(params.input_folder)
+    if params.f:
+        corpus.load_from_folders(params.input_folder)
+    else:    
+        corpus.load_from_folder(params.input_folder)
     corpus.print_stat()
-    distribution = corpus.get_overlaps()
     
-    corpus.remove_overlaps(1,distribution)
-    corpus.remove_empty_lines()
-    corpus.remove_numbers_and_links()
+    distribution = corpus.get_overlaps()
+    if clean_up_document:
+        corpus.remove_overlaps(1,distribution)
+        corpus.remove_empty_lines()
+        corpus.remove_numbers_and_links()
 
     if save_statistics:
         with codecs.open("lines_freq_distributions.csv", "w", encoding=my_encoding) as out:
