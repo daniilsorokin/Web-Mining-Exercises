@@ -55,10 +55,10 @@ class StemmedCorpus(DocumentCorpus):
 def filter_base_terms(base_terms, n):
     return sorted(base_terms,  key = lambda x: x[1])[:n]
 
-def save_as_csv(vectors, file_name):
+def save_as_csv(vectors, file_name, save_names=False):
     with codecs.open(file_name, "w", encoding=my_encoding) as out:
         for vector, doc_name in vectors:
-            out.write(get_document_class(doc_name) + "," + ",".join(map(str,vector)) + "\n")
+            out.write( (doc_name if save_names else get_document_class(doc_name)) + "," + ",".join(map(str,vector)) + "\n")
     print("Vectors saved to " + file_name)    
 
 def save_as_libsvm(vectors, file_name):
@@ -75,6 +75,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     parser.add_argument('-s',action='store_true', help = "Save filtered base terms to file.")
+    parser.add_argument('-d',action='store_true', help = "Save document names instead of classes in vectors.")
     parser.add_argument('-n',type=int, help = "Number of most frequent base terms to keep.", default=10)
     parser.add_argument('-b', type=argparse.FileType('r', encoding=my_encoding),  
                         help = "Read a list of base terms from file. Should be in " + my_encoding + ". Options -s and -n ignored.")
@@ -107,4 +108,4 @@ if __name__ == '__main__':
             print("Base term list saved to selected_base_terms_n" + str(len(base_terms)) + ".txt")
 #     print(base_terms)
     vectors = corpus.compute_vectors(base_terms)
-    save_as_csv(vectors, params.output_folder + "vectors_n" + str(len(base_terms)) + ".csv")
+    save_as_csv(vectors, params.output_folder + "vectors_n" + str(len(base_terms)) + ".csv", params.d)
