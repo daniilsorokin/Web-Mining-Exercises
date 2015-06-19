@@ -13,6 +13,7 @@ my_encoding = "utf-8"
 class DocumentCorpus:
     def __init__(self, documents=None):
         self._documents = documents if documents else []
+        self._corpus_name = "no_name"
         
     def load_from_folder(self, folder_name, class_name = ""):
         """ Adds documents from the specified folder into the corpus. """
@@ -20,6 +21,7 @@ class DocumentCorpus:
             with codecs.open(folder_name + f_name, "r", encoding=my_encoding) as f:
                 self._documents.append( (f.read().strip(), create_document_name(f_name, class_name)) )
         print("Loaded {} documents.".format(len(self._documents)))
+        self._corpus_name = folder_name.split(os.sep)[-2]
         return self._documents
     
     def load_from_folders(self, folder_name):

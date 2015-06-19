@@ -4,9 +4,7 @@ Created on Jun 2, 2015
 @author: Daniil Sorokin<sorokin@ukp.informatik.tu-darmstadt.de>
 '''
 import codecs, math, argparse, os
-from nltk.probability import FreqDist
 from nltk.tokenize import regexp_tokenize
-from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from collections import defaultdict
 from compose_corpus import DocumentCorpus, get_document_class, get_classes
@@ -25,23 +23,6 @@ class StemmedCorpus(DocumentCorpus):
     
     def preprocess_documents(self):
         self._stemmed_documents = [ (self._stemm_tokens(self._remove_stopword(self._tokenize_document(doc[0].lower()))), doc[1] ) for doc in self._documents]
-    
-    def compute_base_terms(self):
-        base_terms = defaultdict(int)
-        for doc_stems, _ in self._stemmed_documents:
-            for term in set(doc_stems):
-                base_terms[term] += 1
-        n = len(self._stemmed_documents)
-        base_terms = [(bt, math.log( n / df )) for bt, df in base_terms.items()]
-        return base_terms
-#         return {term for doc in self._stemmed_documents for term in doc[0]}
-
-    def compute_vectors(self, base_terms):
-        vectors = []
-        for doc_stems, doc_name in self._stemmed_documents:
-            vector = [ (doc_stems.count(bt) / len(doc_stems) * idf) for bt, idf in base_terms ]
-            vectors.append( (vector, doc_name) )
-        return vectors        
 
     def _tokenize_document(self, document):
         return regexp_tokenize(document, pattern_words)
@@ -51,11 +32,39 @@ class StemmedCorpus(DocumentCorpus):
     
     def _stemm_tokens(self, tokens):
         return [self._stemmer.stem(token) for token in tokens]
+    
+def idf_weight_log(n, df):
+    return math.log(1 + (n / (1 + df)) )
+
+def tf_weight_log(ft, dl):
+    ft = ft + 1
+    return math.log(1 + ft)
+
+def tf_weight_log_norm(ft, dl):
+    ft = ft + 1
+    return math.log(1 + (ft/ (1 + dl)) )
+    
+def compute_base_terms(tokenized_documents):
+    base_terms = defaultdict(int)
+    for tokens, _ in tokenized_documents:
+        for bt in set(tokens):
+            base_terms[bt] += 1
+    n = len(tokenized_documents)
+    base_terms = [(bt, idf_weight_log(n, df)) for bt, df in base_terms.items()]
+    return base_terms
+#         return {term for doc in self._stemmed_documents for term in doc[0]}
 
 def filter_base_terms(base_terms, n):
     return sorted(base_terms,  key = lambda x: x[1])[:n]
 
-def save_as_csv(vectors, file_name, save_names=False):
+def compute_vectors(tokenized_documents, base_terms, tf_weight=tf_weight_log):
+    vectors = []
+    for tokens, doc_name in tokenized_documents:
+        vector = [ tf_weight(tokens.count(bt), len(tokens)) * idf for bt, idf in base_terms ]
+        vectors.append( (vector, doc_name) )
+    return vectors            
+
+def save_as_csv(vectors, file_name, save_names=True):
     with codecs.open(file_name, "w", encoding=my_encoding) as out:
         for vector, doc_name in vectors:
             out.write( (doc_name if save_names else get_document_class(doc_name)) + "," + ",".join(map(str,vector)) + "\n")
@@ -70,12 +79,22 @@ def save_as_libsvm(vectors, file_name):
             out.write(classes[get_document_class(doc_name)] + " " + " ".join(vs) + "\n")
     print("Vectors saved to " + file_name)    
 
+def read_vectors_from_csv(file_name):
+    data = []
+    with codecs.open(file_name, "r", encoding=my_encoding) as doc_file:
+        for line in doc_file.readlines():
+            columns = line.split(",")
+            doc_name = columns[0]
+            vector = [float(el) for el in columns[1:]]
+            data.append( (vector, doc_name) )
+    return data
+
 
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     parser.add_argument('-s',action='store_true', help = "Save filtered base terms to file.")
-    parser.add_argument('-d',action='store_true', help = "Save document names instead of classes in vectors.")
+    parser.add_argument('-l',action='store_true', help = "Normalize frequency values by document length.")
     parser.add_argument('-n',type=int, help = "Number of most frequent base terms to keep.", default=10)
     parser.add_argument('-b', type=argparse.FileType('r', encoding=my_encoding),  
                         help = "Read a list of base terms from file. Should be in " + my_encoding + ". Options -s and -n ignored.")
@@ -96,7 +115,7 @@ if __name__ == '__main__':
         params.b.close()
         print("Base terms read from file: " + str(len(base_terms)))
     else:
-        base_terms = corpus.compute_base_terms()
+        base_terms = compute_base_terms(corpus._stemmed_documents)
         print("Base terms extracted: " + str(len(base_terms)))
         base_terms = filter_base_terms(base_terms, params.n)
         print("Base terms filtered: " + str(len(base_terms)))
@@ -107,5 +126,9 @@ if __name__ == '__main__':
                     out.write("{},{}\n".format(bt, idf))
             print("Base term list saved to selected_base_terms_n" + str(len(base_terms)) + ".txt")
 #     print(base_terms)
-    vectors = corpus.compute_vectors(base_terms)
-    save_as_csv(vectors, params.output_folder + "vectors_n" + str(len(base_terms)) + ".csv", params.d)
+    vectors = compute_vectors(corpus._stemmed_documents, base_terms, tf_weight = tf_weight_log_norm if params.l else tf_weight_log)
+    save_as_csv(vectors, params.output_folder + corpus._corpus_name +  "_n" + str(len(base_terms)) + ("_tfnorm" if params.l else "") + ".csv")
+    
+    
+    
+    
