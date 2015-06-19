@@ -12,8 +12,8 @@ from compose_corpus import get_document_class
 from vector_representation import read_vectors_from_csv
 
 my_encoding = 'utf-8'
-min_freq = 10 ** -4
-epsilon = 1e-9
+min_freq = 1e-4
+epsilon = 0.0
 logging.basicConfig(filename="classifiers.log",level=logging.INFO)
 
 def cosine(a, b):
@@ -51,6 +51,7 @@ class NBClassifier(EvalClassifier):
         self._clss_x_mean = defaultdict(list)
         self._clss_x_variance = defaultdict(list)
         self._default_class = "" 
+        self._scaling_factor = 1.0
     
     def train(self, vectors_with_classes):
         _clss_vectors = defaultdict(list)
