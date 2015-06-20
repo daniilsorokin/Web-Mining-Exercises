@@ -5,7 +5,7 @@ Created on Jun 18, 2015
 '''
 
 import codecs, math, argparse, os
-from statistics import mean, variance
+from statistics import mean, variance, stdev
 from vector_representation import read_vectors_from_csv, save_as_csv
 
 my_encoding = 'utf-8'
@@ -28,7 +28,7 @@ def get_mu_sigma(vectors_with_classes):
     vectors = zip(*[vector for vector, _ in vectors_with_classes])
     for v_vector in vectors:
         mu_v.append(mean(v_vector))
-        sigma_v.append(variance(v_vector))
+        sigma_v.append(stdev(v_vector))
     return mu_v, sigma_v
 
 def scale_vectors(vectors_with_classes, min_v, max_v):
@@ -80,7 +80,8 @@ if __name__ == '__main__':
     scale_alias = scale_vectors
     if params.z:
         preprocess_alias = get_mu_sigma
-        scale_alias = z_norm_vectors        
+        scale_alias = z_norm_vectors       
+     
     if params.b:
         min_v, max_v = read_min_max_vectors_from_csv(params.b)
         print("Scale read from file: {}, {}".format(str(len(min_v)), str(len(max_v))))
@@ -90,9 +91,9 @@ if __name__ == '__main__':
         print(min_v[:10])
         print(max_v[:10])
         input_data = scale_alias(input_data, min_v, max_v)
-        scale_vector_filename = os.path.basename(params.input_file)
-        with codecs.open("scale_vector_" + scale_vector_filename + ".csv", "w", encoding=my_encoding) as out: 
+        scale_vector_filename = "scale_vector_" + os.path.basename(params.input_file) + ("_z" if params.z else "") + ".csv"
+        with codecs.open( scale_vector_filename , "w", encoding=my_encoding) as out: 
             out.write(",".join(map(str,min_v)) + "\n")
             out.write(",".join(map(str,max_v)) + "\n")
-        print("Base term list saved to scale_vector_" + scale_vector_filename + ".csv")
+        print("Base term list saved to " + scale_vector_filename)
     save_as_csv(input_data, os.path.splitext(params.input_file)[0] + "_scaled" + ("_z" if params.z else "") + ".csv")

@@ -93,9 +93,9 @@ def read_vectors_from_csv(file_name):
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('-s',action='store_true', help = "Save filtered base terms to file.")
-    parser.add_argument('-l',action='store_true', help = "Normalize frequency values by document length.")
-    parser.add_argument('-n',type=int, help = "Number of most frequent base terms to keep.", default=10)
+    parser.add_argument('-s', action='store_true', help = "Save filtered base terms to file.")
+    parser.add_argument('-l', action='store_true', help = "Normalize frequency values by document length.")
+    parser.add_argument('-n', type=int, help = "Number of most frequent base terms to keep.", default=10)
     parser.add_argument('-b', type=argparse.FileType('r', encoding=my_encoding),  
                         help = "Read a list of base terms from file. Should be in " + my_encoding + ". Options -s and -n ignored.")
     

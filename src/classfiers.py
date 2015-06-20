@@ -8,12 +8,13 @@ import logging
 from collections import Counter, defaultdict
 from statistics import mean, variance
 from evaluation_metrics import *
+from scale import get_mu_sigma
 from compose_corpus import get_document_class
 from vector_representation import read_vectors_from_csv
 
 my_encoding = 'utf-8'
 min_freq = 1e-4
-epsilon = 0.0
+epsilon = 1e-7
 logging.basicConfig(filename="classifiers.log",level=logging.INFO)
 
 def cosine(a, b):
@@ -31,6 +32,13 @@ def cosine(a, b):
 
 def euclideanDis(a, b):
     return math.sqrt( sum( (v1 - v2)**2 for v1,v2 in zip(a,b)) )
+
+def _pdf(mu, sigma, x ):
+    term_1 = 1 / math.sqrt( 2 * math.pi * sigma)
+    term_2 = math.exp( -((x - mu)**2 / (2 * sigma) ) )
+    if term_2 == 0.0: term_2 = math.exp(-700)
+    if term_1*term_2 == 0: logging.info("pdf = {} * {} = 0.0".format(term_1, term_2)) 
+    return term_1 * term_2
 
 
 class EvalClassifier():
@@ -50,6 +58,8 @@ class NBClassifier(EvalClassifier):
         self._p_clss = defaultdict(float)
         self._clss_x_mean = defaultdict(list)
         self._clss_x_variance = defaultdict(list)
+        self._x_mean = []
+        self._x_variance = []
         self._default_class = "" 
         self._scaling_factor = 1.0
     
@@ -61,15 +71,18 @@ class NBClassifier(EvalClassifier):
             _clss_vectors[clss].append(vector)
             
         self._default_class, _ = Counter(self._p_clss).most_common(1)[0]
+        self._x_mean, self._x_variance = get_mu_sigma(vectors_with_classes)
    
         for clss, vectors in _clss_vectors.items():
             self._p_clss[clss] = float(self._p_clss[clss]/len(vectors_with_classes))
             variable_vectors = zip(*vectors)
             for v_vector in variable_vectors:
                 self._clss_x_mean[clss].append(mean(v_vector))
-                self._clss_x_variance[clss].append(variance(v_vector) + epsilon)
+                self._clss_x_variance[clss].append(variance(v_vector))
         logging.info("Classes learned: " + str(self._p_clss))
         logging.info("Number of dimensions: " + str(len(self._clss_x_mean["learned"])))
+        logging.info("Means learned: " + str(self._clss_x_mean))
+        logging.info("Variance learned: " + str(self._clss_x_variance))
         
     def classify(self, vectors_no_classes):
         results = []
@@ -82,18 +95,21 @@ class NBClassifier(EvalClassifier):
                 for i,x in enumerate(vector):
                     clss_x_variance = self._clss_x_variance[clss][i]
                     if clss_x_variance != 0.0:
-                        term_1 = 1 / math.sqrt( 2 * math.pi * clss_x_variance)
-                        term_2 = math.exp( -((x - self._clss_x_mean[clss][i])**2 / (2 * clss_x_variance) ) )
-                        p_x_clss =  term_1 * term_2
+#                         term_1 = 1 / math.sqrt( 2 * math.pi * clss_x_variance)
+#                         term_2 = math.exp( -((x - self._clss_x_mean[clss][i])**2 / (2 * clss_x_variance) ) )
+#                         p_x_clss =  term_1 * term_2
+                        p_x_clss = _pdf(self._clss_x_mean[clss][i], clss_x_variance, x) / _pdf(self._x_mean[i], self._x_variance[i], x)
                         product_p_x_clss *= p_x_clss
+#                         logging.info("{} *= {}".format(product_p_x_clss, p_x_clss))
                 p_clss_vector = p_clss * product_p_x_clss
+#                 logging.info("{} = {} * {}".format(p_clss_vector, p_clss, product_p_x_clss))
 #                 print("{},{},{},{},{}\n".format(clss,product_p_x_clss,self._clss_x_mean[clss][999], self._clss_x_variance[clss][999],x))
                 if p_clss_vector > max_p:
                     max_p = p_clss_vector
                     prediction = clss
             logging.info("Class: {}, p: {}".format(prediction, max_p))
             results.append(prediction)
-        return results
+        return results    
 
 class NNClassifier(EvalClassifier):
     def __init__(self, k=1):
@@ -139,6 +155,9 @@ class NNClassifier(EvalClassifier):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-e',action='store_true', help = "Evaluate on test file.")
+    parser.add_argument('-k',type=int, help = "K for KNN.", default=1)
+    parser.add_argument('-c', choices=["KNN", "NB"], help = "Number of most frequent base terms to keep.", default = "NB")
+    
 #     parser.add_argument('-n',type=int, help = "Number of most frequent base terms to keep.", default=10)
 #     parser.add_argument('-b', type=argparse.FileType('r', encoding=my_encoding),  
 #                         help = "Read a list of base terms from file. Should be in " + my_encoding + ". Options -s and -n ignored.")
@@ -156,8 +175,8 @@ if __name__ == '__main__':
 #         vector = [float(el) for el in columns[1:]]
 #         test_data.append( (vector, clss) )
         
-    classifier = NBClassifier()
-    logging.info("Trainin on: {}".format(params.train_file)) 
+    classifier = NBClassifier() if params.c == "NB" else NNClassifier(params.k)
+    logging.info("Trainin {} on: {}".format(params.c, params.train_file)) 
     classifier.train(train_data)
     if params.e:
         logging.info("Evaluating on: {}".format(params.test_file))
