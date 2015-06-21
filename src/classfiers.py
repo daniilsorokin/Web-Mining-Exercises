@@ -84,6 +84,9 @@ class NBClassifier(EvalClassifier):
         logging.info("Means learned: " + str(self._clss_x_mean))
         logging.info("Variance learned: " + str(self._clss_x_variance))
         
+    def get_model(self):
+        return self._clss_x_mean, self._clss_x_variance
+        
     def classify(self, vectors_no_classes):
         results = []
         logging.info("Classifying {} documents.".format(len(vectors_no_classes)))
