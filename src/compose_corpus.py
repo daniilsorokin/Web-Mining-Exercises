@@ -90,7 +90,7 @@ def create_document_name(document_name, class_name):
     return (class_name.strip() + "_"  if len(class_name) > 0 else "") + document_name.strip();
 
 def get_document_class(document_name):
-    return document_name.split("_",2)[0]
+    return document_name.rsplit("_",2)[0]
 
 def get_classes(documents):
     return {get_document_class(doc[1]) for doc in documents}
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     parser.add_argument('-p',action='store_true', help = "Clean up documents.")
     parser.add_argument('-f',action='store_true', help = "Classes are separated into folders.")
     parser.add_argument('-l',action='store_true', help = "Save statistics to file.")
-    parser.add_argument('-s',type=int, help = "Remove files shorter than the give length in characters. The length is calculate after preprocessing.", default=0)
+    parser.add_argument('-s',type=int, help = "Remove files shorter than the give length in characters. The length is calculated after preprocessing.", default=0)
     parser.add_argument('input_folder', type=str, help = "Corpus input.")
     parser.add_argument('output_folder', type=str, help = "Save to.")
     

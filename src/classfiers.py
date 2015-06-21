@@ -48,9 +48,15 @@ class EvalClassifier():
 #         results = self.classify([vector for vector, _ in vectors_with_classes])
 #         accuracy = compute_accuracy(results, [get_document_class(clss) for _, clss in vectors_with_classes])
         results = self.classify(vectors)
-        accuracy = compute_accuracy(results, [get_document_class(doc_name) for doc_name in doc_names])
+        gold =  [get_document_class(doc_name) for doc_name in doc_names]
+        compute_confusion_matrix(results, gold)
+        accuracy = compute_accuracy(results, gold)
+        m_p = compute_micro_precision(results, gold)
+        m_r = compute_micro_recall(results, gold)
+        m_f1 = compute_micro_f(results, gold)
         logging.info("Accuracy: " + str(accuracy))
-        return accuracy
+        logging.info(c_matrix_tostr(compute_confusion_matrix(results, gold)))
+        return accuracy, m_p, m_r, m_f1
 
 class NBClassifier(EvalClassifier):
     def __init__(self):
@@ -98,15 +104,9 @@ class NBClassifier(EvalClassifier):
                 for i,x in enumerate(vector):
                     clss_x_variance = self._clss_x_variance[clss][i]
                     if clss_x_variance != 0.0:
-#                         term_1 = 1 / math.sqrt( 2 * math.pi * clss_x_variance)
-#                         term_2 = math.exp( -((x - self._clss_x_mean[clss][i])**2 / (2 * clss_x_variance) ) )
-#                         p_x_clss =  term_1 * term_2
                         p_x_clss = _pdf(self._clss_x_mean[clss][i], clss_x_variance, x) / _pdf(self._x_mean[i], self._x_variance[i], x)
                         product_p_x_clss *= p_x_clss
-#                         logging.info("{} *= {}".format(product_p_x_clss, p_x_clss))
                 p_clss_vector = p_clss * product_p_x_clss
-#                 logging.info("{} = {} * {}".format(p_clss_vector, p_clss, product_p_x_clss))
-#                 print("{},{},{},{},{}\n".format(clss,product_p_x_clss,self._clss_x_mean[clss][999], self._clss_x_variance[clss][999],x))
                 if p_clss_vector > max_p:
                     max_p = p_clss_vector
                     prediction = clss
