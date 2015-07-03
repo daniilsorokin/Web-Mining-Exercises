@@ -20,4 +20,3 @@ def get_urls_from_soup(soup):
 def canonize_and_filter_urls(base, urls, constraints = {"javascript","mailto"}):
     return [urljoin(base, urldefrag(url)[0]) for url in urls  
             if not url.lower().split(":",2)[0] in constraints]
-
