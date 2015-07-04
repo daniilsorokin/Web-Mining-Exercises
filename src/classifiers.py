@@ -15,7 +15,6 @@ from vector_representation import read_vectors_from_csv
 my_encoding = 'utf-8'
 min_freq = 1e-4
 epsilon = 1e-7
-logging.basicConfig(filename="classifiers.log",level=logging.INFO)
 
 def cosine(a, b):
     amagn = min_freq
@@ -169,6 +168,8 @@ if __name__ == '__main__':
     parser.add_argument('test_file', type=str)
 
     params = parser.parse_args()
+    logging.basicConfig(filename="classifiers.log",level=logging.INFO)
+
     
     train_data = read_vectors_from_csv(params.train_file)
     test_data = read_vectors_from_csv(params.test_file)

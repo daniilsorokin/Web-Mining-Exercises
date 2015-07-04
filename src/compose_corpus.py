@@ -64,6 +64,10 @@ class DocumentCorpus:
         self._documents = [ (self._remove_lines_from_document(doc[0], lines_to_remove), doc[1]) for doc in self._documents]
         print("Repeating lines removed.")
         
+    def remove_suffix(self, suffix):
+        pattern = suffix + '.*$'
+        self._documents = [ (re.sub(pattern, '', doc[0], flags=re.DOTALL), doc[1]) for doc in self._documents] 
+        
     def cut_by_length(self, length):
         self._documents = [doc for doc in self._documents if len(doc[0]) >= length]
 
@@ -101,6 +105,8 @@ if __name__ == '__main__':
     parser.add_argument('-p',action='store_true', help = "Clean up documents.")
     parser.add_argument('-f',action='store_true', help = "Classes are separated into folders.")
     parser.add_argument('-l',action='store_true', help = "Save statistics to file.")
+    parser.add_argument('-x',type=str, help = "Remove everything after the given line",
+                        default=None)    
     parser.add_argument('-s',type=int, help = "Remove files shorter than the give length in characters. The length is calculated after preprocessing.", default=0)
     parser.add_argument('input_folder', type=str, help = "Corpus input.")
     parser.add_argument('output_folder', type=str, help = "Save to.")
@@ -122,6 +128,10 @@ if __name__ == '__main__':
         corpus.remove_overlaps(1,distribution)
         corpus.remove_empty_lines()
         corpus.remove_numbers_and_links()
+    
+    corpus.print_stat()    
+    if params.x:
+        corpus.remove_suffix(params.x)
 
     if save_statistics:
         with codecs.open("lines_freq_distributions.csv", "w", encoding=my_encoding) as out:
