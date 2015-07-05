@@ -10,9 +10,23 @@ from classifiers import euclideanDis
 from vector_representation import read_vectors_from_csv
 from statistics import mean
 from collections import defaultdict
-import argparse
+import argparse, os
+import codecs
+from shutil import copyfile
 
 my_encoding = "utf-8"
+
+def save_assignment_stat(assignments, names):
+    with codecs.open("clustering_assignments_stats.csv", "w", encoding=my_encoding) as out:
+        cluster_size = defaultdict(int)
+        cluster_names = defaultdict(lambda: [])
+        for i, a in enumerate(assignments):
+            cluster_size[a] += 1
+            cluster_names[a].append(names[i])
+        out.write("Cluster id,Size,Ex.\n")
+        for c, s in cluster_size.items():
+            out.write("{},{},{}\n".format(c,s, (cluster_names[c][:4] if len(cluster_names[c]) > 4 else cluster_names[c]) ))
+    
 
 class KMeans():
     
@@ -62,6 +76,7 @@ class KMeans():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-k',type=int, help = "K for clustering.", default=1)
+    parser.add_argument('-s',type=str, help = "Save clusters to folders. You have to specify the folder containing original files.", default=None)
     parser.add_argument('input_file', type=str)
     params = parser.parse_args()
     logging.basicConfig(filename="clustering.log", level=logging.INFO)
@@ -70,9 +85,20 @@ if __name__ == '__main__':
     kmeans = KMeans()
     logging.info("Clustering on: {}".format(params.input_file))
     assignments = kmeans.cluster(list(input_data), params.k)
-    for i, name in enumerate(names):
-        logging.info("{}, {}".format(name, assignments[i]))
-    print("Finished")
+    with codecs.open("clustering_assignments.csv", "w", encoding=my_encoding) as out:
+        for i, name in enumerate(names):
+            out.write("{}, {}\n".format(name, assignments[i]))
+    print("Clustering finished")
+    save_assignment_stat(assignments, names)
+    if params.s:
+        print("Grouping files")
+        for i, name in enumerate(names):
+            if not os.path.exists(params.s + os.sep + str(assignments[i])): os.makedirs(params.s + os.sep + str(assignments[i]))
+            copyfile(params.s + name, params.s + os.sep + str(assignments[i]) + os.sep + name)
+            
+        
+        
+    
     
     
     

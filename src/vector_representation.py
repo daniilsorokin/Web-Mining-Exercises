@@ -11,7 +11,7 @@ from collections import defaultdict
 from compose_corpus import DocumentCorpus, get_document_class, get_classes
 
 
-pattern_words = "\w[\w\-0-9']+"
+pattern_words = "[A-Za-z][\w\-']*"
 my_encoding = 'utf-8'
 
 class StemmedCorpus(DocumentCorpus):
@@ -164,6 +164,10 @@ if __name__ == '__main__':
     corpus = StemmedCorpus(language="english")
     corpus.load_from_folder(params.input_folder)
     corpus.preprocess_documents(lemmatize=params.w, remove_stopwords=params.r)
+    
+#     with codecs.open("tokens.log", "w", encoding="utf-8") as out:
+#         for tokens, doc_name in corpus._stemmed_documents:
+#             out.write(str(tokens) + "\n")
     
     if params.b:
         columns = [line.strip().split(",", 2) for line in params.b.readlines()[1:]]

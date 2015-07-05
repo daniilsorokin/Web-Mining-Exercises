@@ -67,6 +67,10 @@ class DocumentCorpus:
     def remove_suffix(self, suffix):
         pattern = suffix + '.*$'
         self._documents = [ (re.sub(pattern, '', doc[0], flags=re.DOTALL), doc[1]) for doc in self._documents] 
+
+    def remove_prefix(self, prefix):
+        pattern =  '^.*?' + prefix
+        self._documents = [ (re.sub(pattern, '', doc[0], flags=re.DOTALL), doc[1]) for doc in self._documents] 
         
     def cut_by_length(self, length):
         self._documents = [doc for doc in self._documents if len(doc[0]) >= length]
@@ -88,7 +92,7 @@ class DocumentCorpus:
         return "\n".join([line.strip() for line in document.split("\n") if not line.strip() in lines_to_remove])
     
     def _remove_numbers_and_links_from_document(self, document):
-        return "\n".join([line.strip() for line in document.split("\n") if not re.match('[\d\.\-\s]+$|https?://[^\s<>"]+$|www\.[^\s<>"]+$', line.strip()) ])
+        return "\n".join([line.strip() for line in document.split("\n") if not re.match('[\d\.,\-\s]+$|https?://[^\s<>"]+$|www\.[^\s<>"]+$', line.strip()) ])
     
 def create_document_name(document_name, class_name):
     return (class_name.strip() + "_"  if len(class_name) > 0 else "") + document_name.strip();
@@ -106,6 +110,8 @@ if __name__ == '__main__':
     parser.add_argument('-f',action='store_true', help = "Classes are separated into folders.")
     parser.add_argument('-l',action='store_true', help = "Save statistics to file.")
     parser.add_argument('-x',type=str, help = "Remove everything after the given line",
+                        default=None)    
+    parser.add_argument('-z',type=str, help = "Remove everything before the given line",
                         default=None)    
     parser.add_argument('-s',type=int, help = "Remove files shorter than the give length in characters. The length is calculated after preprocessing.", default=0)
     parser.add_argument('input_folder', type=str, help = "Corpus input.")
@@ -132,6 +138,8 @@ if __name__ == '__main__':
     corpus.print_stat()    
     if params.x:
         corpus.remove_suffix(params.x)
+    if params.z:
+        corpus.remove_prefix(params.z)
 
     if save_statistics:
         with codecs.open("lines_freq_distributions.csv", "w", encoding=my_encoding) as out:
