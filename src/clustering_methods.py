@@ -1,6 +1,8 @@
 '''
 Created on July 04, 2015
 
+Implementation of the K means clustering algorithm. 
+
 @author: Daniil Sorokin<sorokin@ukp.informatik.tu-darmstadt.de>
 '''
 
