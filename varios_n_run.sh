@@ -1,0 +1,15 @@
+time libsvm-3.20/svm-predict faz-dataset/dataset/vectors/test_vectors_n10.data  train_vectors_n10.data.model faz-dataset/dataset/predictions.test.n10 
+time libsvm-3.20/svm-predict faz-dataset/dataset/vectors/test_vectors_n10240.data train_vectors_n10240.data.model faz-dataset/dataset/predictions.test.n10240
+time libsvm-3.20/svm-predict faz-dataset/dataset/vectors/test_vectors_n1280.data train_vectors_n1280.data.model faz-dataset/dataset/predictions.test.n1280 
+time libsvm-3.20/svm-predict faz-dataset/dataset/vectors/test_vectors_n160.data train_vectors_n160.data.model faz-dataset/dataset/predictions.test.n160 
+time libsvm-3.20/svm-predict faz-dataset/dataset/vectors/test_vectors_n20.data train_vectors_n20.data.model faz-dataset/dataset/predictions.test.n20 
+time libsvm-3.20/svm-predict faz-dataset/dataset/vectors/test_vectors_n20480.data train_vectors_n20480.data.model faz-dataset/dataset/predictions.test.n20480 
+time libsvm-3.20/svm-predict faz-dataset/dataset/vectors/test_vectors_n2560.data train_vectors_n2560.data.model faz-dataset/dataset/predictions.test.n2560 
+time libsvm-3.20/svm-predict faz-dataset/dataset/vectors/test_vectors_n320.data train_vectors_n320.data.model faz-dataset/dataset/predictions.test.n320 
+time libsvm-3.20/svm-predict faz-dataset/dataset/vectors/test_vectors_n40.data train_vectors_n40.data.model faz-dataset/dataset/predictions.test.n40 
+time libsvm-3.20/svm-predict faz-dataset/dataset/vectors/test_vectors_n40960.data train_vectors_n40960.data.model faz-dataset/dataset/predictions.test.n40960 
+time libsvm-3.20/svm-predict faz-dataset/dataset/vectors/test_vectors_n42362.data train_vectors_n42362.data.model faz-dataset/dataset/predictions.test.n42362 
+time libsvm-3.20/svm-predict faz-dataset/dataset/vectors/test_vectors_n5.data train_vectors_n5.data.model faz-dataset/dataset/predictions.test.n5
+time libsvm-3.20/svm-predict faz-dataset/dataset/vectors/test_vectors_n5120.data train_vectors_n5120.data.model faz-dataset/dataset/predictions.test.n5120 
+time libsvm-3.20/svm-predict faz-dataset/dataset/vectors/test_vectors_n640.data train_vectors_n640.data.model faz-dataset/dataset/predictions.test.n640 
+time libsvm-3.20/svm-predict faz-dataset/dataset/vectors/test_vectors_n80.data train_vectors_n80.data.model faz-dataset/dataset/predictions.test.n80
